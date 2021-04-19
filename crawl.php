@@ -50,18 +50,30 @@ $result = mysqli_query($mysqli,$sql);
 if(isset($_POST['csv'])) 
 {
 
-// output headers so that the file is downloaded rather than displayed
-header('Content-Type: text/csv; charset=utf-8');
-header('Content-Disposition: attachment; filename=data.csv');
-// create a file pointer connected to the output stream
-$output = fopen('php://output', 'w');
-// output the column headings
-fputcsv($output, array('ID', 'TITLE', 'DESCRIPTION','PRICE','IMAGE','MODEL','SKU'));
+$filename = 'CSV.csv';
+$export = unserialize($_POST['export']);
+//$csv = unserialize($_POST['csv']);
 
-$sql="SELECT id,title,description,price,image,model,sku FROM web_page_details ";
-$result = mysqli_query($mysqli,$sql);  
+// file creation
+$file = fopen($filename,"w");
 
-while ($row = mysql_fetch_assoc($result)) fputcsv($output, $row);	
+foreach ($export as $line){
+  fputcsv($file,$line);
+}
+
+fclose($file); 
+
+// download
+header("Content-Description: File Transfer");
+header("Content-Disposition: attachment; filename=".$filename);
+header("Content-Type: application/csv; "); 
+
+readfile($filename);
+
+// deleting file
+unlink($filename);
+exit();
+
 
 }
 
@@ -81,18 +93,18 @@ while ($row = mysql_fetch_assoc($result)) fputcsv($output, $row);
     <title>Crawl A web Page</title>
   </head>
   <body>
-     <div class="container">
-     	<div class="jumbotron">
-     		<div class="card-body">
-     		<form method="POST" action="">
+<div class="container">
+<div class="jumbotron">
+<div class="card-body">
+     		<form method="POST" action="crawl.php">
      			<label for="url">Paste Url:</label><br><br>
   				<input class="form-control"type="text" id="url01" name="url" value=""><br><br>
   				<input type="submit" value="Crawl" name="Submit" class="btn btn-danger">
   				<input type="submit" value="Generate CSV File" name="csv" class="btn btn-info">
-     		</form>
-     		</div>
-     		<div class="table-responsive" id="employee_table">  
-                     <table class="table table-bordered">  
+          <br><br>
+  
+     		  <div class="table-responsive" id="employee_table">  
+          <table class="table table-bordered">  
                           <tr>  
                                <th width="5%">ID</th>  
                                <th width="25%">TITLE</th>  
@@ -104,8 +116,17 @@ while ($row = mysql_fetch_assoc($result)) fputcsv($output, $row);
                           </tr>  
                      <?php  
                      $result = mysqli_query($mysqli, "SELECT * FROM web_page_details ORDER BY id ASC");
+                      $user_arr = array();
                       while($row = mysqli_fetch_array($result)) 
                       {
+                            $id = $row['id'];
+                            $title = $row['title'];
+                            $description = $row['description'];
+                            $price = $row['price'];
+                            $image = $row['image'];
+                            $model = $row['model'];
+                            $sku = $row['sku'];
+                            $user_arr[] = array($id,$title,$description,$price,$image,$model,$sku);
                      ?>  
                           <tr>  
                                <td><?php echo $row["id"]; ?></td>  
@@ -119,10 +140,16 @@ while ($row = mysql_fetch_assoc($result)) fputcsv($output, $row);
                      <?php       
                      }  
                      ?>  
-                     </table>  
-                </div>  
-     	</div>
-     </div>
+            </table>
+            </div>  
+                     <?php 
+            $serialize_user_arr = serialize($user_arr);
+            ?>
+            <textarea name='export' style='display: none;'><?php echo $serialize_user_arr; ?></textarea>
+        </form>
+</div>
+</div>
+</div>
 
     <!-- Optional JavaScript; choose one of the two! -->
 
