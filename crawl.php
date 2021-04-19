@@ -42,9 +42,28 @@ if(isset($_POST['Submit']))
  	@$url = parse_url( $s );
  	@$tags = get_meta_tags($url['scheme'].'://'.$url['host'] );
  	$sku=$tags['sku'];
-}
-$result = mysqli_query($mysqli, "INSERT INTO web_page_details(id,title,description,price,image,model,sku) VALUES('$id','$title','$description','$price','$image','$model','$sku')");  
 
+$sql="INSERT INTO web_page_details(id,title,description,price,image,model,sku) VALUES('$id','$title','$description','$price','$image','$model','$sku')";
+$result = mysqli_query($mysqli,$sql);  
+}
+
+if(isset($_POST['csv'])) 
+{
+
+// output headers so that the file is downloaded rather than displayed
+header('Content-Type: text/csv; charset=utf-8');
+header('Content-Disposition: attachment; filename=data.csv');
+// create a file pointer connected to the output stream
+$output = fopen('php://output', 'w');
+// output the column headings
+fputcsv($output, array('ID', 'TITLE', 'DESCRIPTION','PRICE','IMAGE','MODEL','SKU'));
+
+$sql="SELECT id,title,description,price,image,model,sku FROM web_page_details ";
+$result = mysqli_query($mysqli,$sql);  
+
+while ($row = mysql_fetch_assoc($result)) fputcsv($output, $row);	
+
+}
 
 ?>
 
@@ -64,13 +83,44 @@ $result = mysqli_query($mysqli, "INSERT INTO web_page_details(id,title,descripti
   <body>
      <div class="container">
      	<div class="jumbotron">
-     		<div class="card-body"></div>
+     		<div class="card-body">
      		<form method="POST" action="">
      			<label for="url">Paste Url:</label><br><br>
   				<input class="form-control"type="text" id="url01" name="url" value=""><br><br>
   				<input type="submit" value="Crawl" name="Submit" class="btn btn-danger">
+  				<input type="submit" value="Generate CSV File" name="csv" class="btn btn-info">
      		</form>
      		</div>
+     		<div class="table-responsive" id="employee_table">  
+                     <table class="table table-bordered">  
+                          <tr>  
+                               <th width="5%">ID</th>  
+                               <th width="25%">TITLE</th>  
+                               <th width="35%">DESCRIPTION</th>  
+                               <th width="10%">PRICE</th>  
+                               <th width="20%">IMAGE</th>  
+                               <th width="5%">MODEL</th>
+                               <th width="5%">SKU</th>    
+                          </tr>  
+                     <?php  
+                     $result = mysqli_query($mysqli, "SELECT * FROM web_page_details ORDER BY id ASC");
+                      while($row = mysqli_fetch_array($result)) 
+                      {
+                     ?>  
+                          <tr>  
+                               <td><?php echo $row["id"]; ?></td>  
+                               <td><?php echo $row["title"]; ?></td>  
+                               <td><?php echo $row["description"]; ?></td>  
+                               <td><?php echo $row["price"]; ?></td>  
+                               <td><?php echo $row["image"]; ?></td>  
+                               <td><?php echo $row["model"]; ?></td>
+                               <td><?php echo $row["sku"]; ?></td>    
+                          </tr>  
+                     <?php       
+                     }  
+                     ?>  
+                     </table>  
+                </div>  
      	</div>
      </div>
 
